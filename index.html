@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re:Pitch</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="content">
+    <h1>Re:Pitch</h1>
+    <div class="divcont">
+    <div id="drop_zone" class="drop-zone">
+        <p>Choose options then drop an audio file here or click to select a file</p>
+        <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+    </div>
+    <button style="display: none;" id="processButton">Resample Audio</button>
+    <a id="downloadLink" style="display: none;">Download </a>
+    </div>
+    <div class="options">
+        <div class="fidelity">
+          <p><b>Fidelity</b></p>
+        <div>
+            <input type="radio" id="sd" name="fidelity" value="sd" checked />
+            <label for="sd">CD (16/46)</label>
+          </div>
+
+          <div>
+            <input type="radio" id="SP-1200" name="fidelity" value="SP-1200" />
+            <label for="SP-1200">SP-1200 (12/26)</label>
+          </div>
+          <div>
+            <input type="radio" id="SK-1" name="fidelity" value="SK-1" />
+            <label for="SK-1">SK-1 (8/9)</label>
+          </div>
+        </div>
+        <div class="speed">
+          <p><b>Speed</b></p>
+          <div>
+            <input type="radio" id="1x" name="speed" value="1x" checked />
+            <label for="1x">1x</label>
+          </div>
+          <div>
+            <input type="radio" id="2x" name="speed" value="2x" />
+            <label for="2x">2x</label>
+          </div>
+          <div>
+            <input type="radio" id="4x" name="speed" value="4x" />
+            <label for="4x">4x</label>
+          </div>
+
+        </div>
+    </div>
+
+
+    <div class="information">
+      <div class="section 1">
+          <h2>What Is This?</h2>
+          <p>A tool that modifies the speed and fidelity of audio files.</p>
+      </div>
+  
+      <div class="section 2">
+          <h2>How Do I Use This?</h2>
+          <p>1. Choose options <br>
+            2. Upload files (max. 30 sec.)<br>
+            3. ??? <br>
+            4. Make music <br>
+          </p>
+      </div>
+      <div class="section">
+          <h2>What Do The Options Mean?</h2>
+          <p>Fidelity sets, well, the fidelity of the output. You can choose between CD Quality (46kHz 16 Bit) and simulations of old samplers such as the Emu SP-1200 (26kHz 12 Bit) or Casio SK-1 (9kHz 8 Bit). Speed sets the speed of the output.</p>
+      </div>
+  
+      <div class="section 3">
+          <h2>Why Does This Exist?</h2>
+          <p>Speeding up audio samples is an old trick dating back to the first hardware samplers such as the <a href="https://en.wikipedia.org/wiki/E-mu_SP-1200">Emu SP-1200</a> and <a href="https://de.wikipedia.org/wiki/Akai_MPC_60">Akai MPC 60</a>. It was used to get around memory limitations. These days, it's useful for the <a href="https://www.roland.com/global/products/sp-404mk2/">Roland SP-404</a> or the <a href="https://teenage.engineering/products/ep-133">Teenage Engineering OP-133 KO II.</a> Now you're asking yourself, "Can't I do this with my DAW?" Sure, you could, but this is a drag & drop solution, and no one forces you to use it anyway.</p>
+      </div>
+      <div class="section">
+          <h2>How Does This Work?</h2>
+          <p>It uses the WebAudio API, WebAssembly, and some fairy dust. Files are processed client-side, which means that your audio does not get sent to any servers. If you want to know more, the source code is on GitHub.</p>
+      </div>
+      <div class="section 5">
+          <h2>What Do I Do With The Files?</h2>
+          <p>Upload them to your sampler and pitch down accordingly. <br> If you are using the KO II, assign the sample to a pad and either pitch it down or play it chromatically one octave down if you chose 2X and two octaves down if you chose 4X.</p>
+      </div>
+      <div class="section 4">
+          <h2>Why Did You Make This?</h2>
+          <p>Because I got tired of manually speeding up my samples for my KO II using Ableton.</p>
+      </div>
+      <div class="section">
+          <h2>Who Are You?</h2>
+          <p>My name is David, but I go by Palm and Yūgo. I'm an indie artist mainly doing lo-fi but also other kinds of music. If you want to know more, you can check out my website at <a href="https://yuugo.art">yuugo.art</a></p>
+      </div>
+  </div>
+  
+    <div class="footer">
+        <p>Made by <a href="https://yuugo.art">Yūgo</a> <br> Darkmode by <a href="https://darkmodejs.learn.uno/">Darkroom.js</a></p>
+    </div>
+</body>
+
+</html>
+
+<script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
+<script src="https://unpkg.com/wasm-media-encoders/dist/umd/WasmMediaEncoder.min.js"></script>
+<script src="script.js"></script>
+<script>
+  function addDarkmodeWidget() {
+    new Darkmode().showWidget();
+  }
+  window.addEventListener('load', addDarkmodeWidget);
+</script>
