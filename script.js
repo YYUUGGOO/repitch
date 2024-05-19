@@ -34,76 +34,13 @@ function handleFileSelect(event) {
     processAudio();
 }
 
+let HTMLSpeed = getSelectedRadioValue('speed');
+let HTMLsampleRate = getSelectedRadioValue('fidelity');
+
+
 function getSelectedRadioValue(name) {
     const selectedRadio = document.querySelector(`input[name="${name}"]:checked`);
     return selectedRadio ? selectedRadio.value : null;
-}
-
-function extractBpmAndKey(fileName) {
-    // Extract BPM as the last number in the file name between 55 and 190
-    const bpmMatch = fileName.match(/(\d+)(?!.*\d)/);
-    const bpm = bpmMatch ? parseInt(bpmMatch[0]) : 'Unknown';
-
-    // Check if BPM is within the valid range (55 to 190)
-    const validBpm = bpm >= 55 && bpm <= 190 ? bpm : 'Unknown';
-
-    // Extract key (optional): you can adjust this regex based on your naming conventions
-    const keyMatch = fileName.match(/\b([A-G][#b]?m?)\b/i);
-    const key = keyMatch ? keyMatch[1] : 'Unknown';
-
-    return { bpm: validBpm, key };
-}
-
-async function processAudio() {
-    const file = fileInput.files[0];
-    if (!file) {
-        alert('Please select an audio file.');
-        return;
-    }
-
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const reader = new FileReader();
-
-    reader.onload = async function (event) {
-        const audioBuffer = event.target.result;
-        const buffer = await audioContext.decodeAudioData(audioBuffer);
-
-        // Check if the audio duration is less than 30 seconds
-        if (buffer.duration >= 30) {
-            alert('Please upload an audio file less than 30 seconds long.');
-            return;
-        }
-
-        // Get and display the file name
-        const fileName = file.name;
-        console.log(`Processing file: ${fileName}`);
-        //document.getElementById('fileNameDisplay').textContent = `Processing file: ${fileName}`;
-
-        const { bpm, key } = extractBpmAndKey(fileName);
-        console.log(`Extracted BPM: ${bpm}, Key: ${key}`);
-
-        const fidelity = getSelectedRadioValue('fidelity');
-        const speed = getSelectedRadioValue('speed');
-
-        if (!fidelity || !speed) {
-            alert('Please select fidelity and speed options.');
-            return;
-        }
-
-        const newSampleRate = getSampleRate(fidelity);
-        const bitDepth = getBitDepth(fidelity);
-        const speedFactor = getSpeedFactor(speed);
-
-        const resampledBuffer = resampleBuffer(buffer, buffer.sampleRate, newSampleRate);
-        const modifiedBuffer = quantizeBuffer(resampledBuffer, bitDepth, audioContext);
-
-        await encodeResampledAudio(modifiedBuffer, bpm, key);
-        
-        // Reset the file input and other states
-        fileInput.value = '';
-    };
-
-    reader.readAsArrayBuffer(file);
 }
 
 function getSampleRate(fidelity) {
@@ -139,8 +76,96 @@ function getSpeedFactor(speed) {
     }
 }
 
+function extractBpmAndKey(fileName) {
+    // Extract BPM as the last number in the file name between 55 and 190
+    const bpmMatch = fileName.match(/(\d+)(?!.*\d)/);
+    const bpm = bpmMatch ? parseInt(bpmMatch[0]) : 'Unknown';
+
+    // Check if BPM is within the valid range (55 to 190)
+    const validBpm = bpm >= 55 && bpm <= 190 ? bpm : 'Unknown';
+
+    // Extract key (optional): you can adjust this regex based on your naming conventions
+    const keyMatch = fileName.match(/\b([A-G][#b]?m?)\b/i);
+    const key = keyMatch ? keyMatch[1] : 'Unknown';
+
+    return {
+        bpm: validBpm,
+        key
+    };
+}
+
+async function processAudio() {
+    let getSpeedButton = getSelectedRadioValue("speed")
+    let getFidelityButton = getSelectedRadioValue("fidelity")
+    let speedVal = getSpeedFactor(getSpeedButton)
+    let sRateVal = getSampleRate(getFidelityButton)
+    let bitVal = getBitDepth(getFidelityButton)
+    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal)
+
+    const file = fileInput.files[0];
+    if (!file) {
+        alert('Please select an audio file.');
+        return;
+    }
+
+    const audioContext = new(window.AudioContext || window.webkitAudioContext)();
+    const reader = new FileReader();
+
+    reader.onload = async function (event) {
+        const audioBuffer = event.target.result;
+        const buffer = await audioContext.decodeAudioData(audioBuffer);
+
+        // Check if the audio duration is less than 30 seconds
+        if (buffer.duration >= 30) {
+            alert('Please upload an audio file less than 30 seconds long.');
+            return;
+        }
+        // Get and display the file name
+        const fileName = file.name;
+        console.log(`Processing file: ${fileName}`);
+        //document.getElementById('fileNameDisplay').textContent = `Processing file: ${fileName}`;
+
+        const { bpm, key } = extractBpmAndKey(fileName);
+        console.log(`Extracted BPM: ${bpm}, Key: ${key}`);
+        
+        // Doubling the speed by halving the buffer duration
+        const channelData = [];
+        let x = speedVal
+        const length = Math.floor(buffer.length / x);
+
+        for (let i = 0; i < buffer.numberOfChannels; i++) {
+            const inputData = buffer.getChannelData(i);
+            const newData = new Float32Array(length);
+
+            for (let j = 0; j < length; j++) {
+                newData[j] = inputData[j * x];
+            }
+            channelData.push(newData);
+        }
+
+        // Creating a new buffer with the modified channel data
+        const newBuffer = audioContext.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+
+        for (let i = 0; i < buffer.numberOfChannels; i++) {
+            newBuffer.copyToChannel(channelData[i], i);
+        }
+
+        let newSampleRate = sRateVal
+        const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, newSampleRate);
+
+        let bitDepth = bitVal
+        const modifiedBuffer = quantizeBuffer(resampledBuffer, bitDepth, audioContext);
+
+        await encodeResampledAudio(modifiedBuffer, bpm, key);
+
+        fileInput.value = '';
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
 function resampleBuffer(buffer, sampleRate, newSampleRate) {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new(window.AudioContext || window.webkitAudioContext)();
     const newLength = Math.floor(buffer.length * newSampleRate / sampleRate);
     const newBuffer = audioContext.createBuffer(buffer.numberOfChannels, newLength, newSampleRate);
 
