@@ -33,13 +33,15 @@ functions and wasm-media-encoders to encode to .mp3
 Group Information:
 ────────────────────────────────────────────────────────────────
 Yūgo is an independent Artist and Creative Coder. Find more 
-information on my [Site](https://yuugo.art)
+information on www.yuugo.art
 
 ────────────────────────────────────────────────────────────────
 Greetings:
 ────────────────────────────────────────────────────────────────
-[Sandoche](https://github.com/sandoche) for [Darkmode.js](https://github.com/sandoche/Darkmode.js)
-[Arsenyr](https://github.com/arseneyr) for [wasm-media-encoders](https://github.com/arseneyr)
-
 AiR - R2R - MOIRA - TRAZOR and all other groups providing the 
 Scene with quality releases.
+```
+# Used Libraries
+[Darkmode.js](https://github.com/sandoche/Darkmode.js)
+
+[wasm-media-encoders](https://github.com/arseneyr/wasm-media-encoders)
