@@ -208,10 +208,11 @@ async function encodeResampledAudio(buffer, bpm, key) {
     const pcmRightChannel = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : pcmLeftChannel;
 
     const encoder = await WasmMediaEncoder.createMp3Encoder();
-
+    const channels = getSelectedRadioValue("channels")
+    
     encoder.configure({
         sampleRate: sampleRate,
-        channels: numberOfChannels,
+        channels: channels,
         vbrQuality: 2,
     });
 

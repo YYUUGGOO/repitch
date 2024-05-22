@@ -1,88 +1,112 @@
-
 body {
-    font-family: 'Courier New', Courier, monospace;
-    margin: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  margin: 20px;
 }
 
 h1 {
-    margin-bottom: 20px;
-    font-size: 3em;
+  margin-bottom: 20px;
+  font-size: 3em;
 }
 
 #drop_zone {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    border: 5px solid black;
-    display:flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    width: 50vw;
-    height: 10vh;
-    font-size: 1.4em;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 5px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 50vw;
+  height: 10vh;
+  font-size: 1.3em;
+}
+
+#drop_zone:hover {
+  cursor: grab;
+
+}
+
+#drop_zone p {
+  margin-left: 40px;
+  margin-right: 40px;
+  overflow-wrap: break-word;
+  margin: 0;
+
+
+}
+
+.divcont {
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+}
+
+.options {
+  width: 100vw;
+  display: flex;
+  justify-content: center
+}
+
+.items {
+  width: 40%;
+  display: flex;
+  justify-content: space-around;
+
+}
+
+.information {
+  padding-left: 20%;
+  padding-right: 20%;
+  text-align: justify;
+}
+
+.section {
+  padding-bottom: 10px;
+}
+
+.section h2 {
+  font-size: 2em;
+
+}
+
+.section p {
+  font-size: 1.3em;
+  margin-top: -20px;
+}
+
+a {
+  color: black
+}
+
+.content {
+  min-height: 90vh
+}
+
+.footer {
+  background: white;
+  height: calc(10vh-30px);
+  ;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.darkmode-layer,
+.darkmode-toggle {
+  z-index: 500;
+}
+
+@media (max-width: 780px) {
+  .items {
+    align-items: baseline;
+    flex-direction: column;
   }
 
-  #drop_zone:hover{
-    cursor: grab;
-
+  #drop_zone {
+    font-size: 1.1em;
   }
 
-  #drop_zone p{
-margin-left: 40px;
-margin-right: 40px;
-  }
-
-  .divcont{
-    width: 100vw;
-    display:flex;
-    justify-content: center;
-  }
-
-  .options{
-    width: 100vw;
-    display:flex;
-    justify-content: center;
-  }
-
-  .information{
-    padding-left: 20%;
-    padding-right: 20%;
-    text-align: justify;
-  }
-  
-  .section {
-    padding-bottom: 10px;
-  }
-
-  .section h2 {
-    font-size: 2em;
-
-  }
-
-  .section p {
-    font-size: 1.3em;
-    margin-top: -20px;
-  }
-
-  a {
-    color: black
-  }
-
-  .content{
-    min-height: 90vh
-  }
-
-  .footer {
-    background: white;
-    height: calc(10vh-30px);;
-    width: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    font-size: 1.2em;
-  }
-
-  .darkmode-layer, .darkmode-toggle {
-    z-index: 500;
-  }
+}
