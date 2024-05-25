@@ -44,7 +44,7 @@ AiR - R2R - MOIRA - TRAZOR and all other groups providing the
 Scene with quality releases.
 ```
 # Known Issue
-There is a small gap at the beginning of the output file. This is due to how resampling wokrs and (for now) can't be changed.
+There is a small gap at the beginning of the output file. This is due to how resampling works and (for now) can't be changed.
 # Used Libraries
 [Darkmode.js](https://github.com/sandoche/Darkmode.js)
 
