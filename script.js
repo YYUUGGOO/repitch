@@ -122,8 +122,11 @@ async function processAudio() {
         }
         // Get and display the file name
         const fileName = file.name;
+        console.log(`Processing file: ${fileName}`);
+        //document.getElementById('fileNameDisplay').textContent = `Processing file: ${fileName}`;
 
         const { bpm, key } = extractBpmAndKey(fileName);
+        console.log(`Extracted BPM: ${bpm}, Key: ${key}`);
         
         // Doubling the speed by halving the buffer duration
         const channelData = [];
@@ -208,11 +211,10 @@ async function encodeResampledAudio(buffer, bpm, key) {
     const pcmRightChannel = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : pcmLeftChannel;
 
     const encoder = await WasmMediaEncoder.createMp3Encoder();
-    const channels = getSelectedRadioValue("channels")
-    
+
     encoder.configure({
         sampleRate: sampleRate,
-        channels: channels,
+        channels: numberOfChannels,
         vbrQuality: 2,
     });
 
