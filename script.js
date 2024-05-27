@@ -96,10 +96,11 @@ function extractBpmAndKey(fileName) {
 async function processAudio() {
     let getSpeedButton = getSelectedRadioValue("speed")
     let getFidelityButton = getSelectedRadioValue("fidelity")
+    let channelNr = getSelectedRadioValue("channels")
     let speedVal = getSpeedFactor(getSpeedButton)
     let sRateVal = getSampleRate(getFidelityButton)
     let bitVal = getBitDepth(getFidelityButton)
-    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal)
+    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal + " Channel: " + channelNr)
 
     const file = fileInput.files[0];
     if (!file) {
@@ -129,33 +130,44 @@ async function processAudio() {
         
         // Doubling the speed by halving the buffer duration
         const channelData = [];
-        let x = speedVal
+        let x = speedVal;
         const length = Math.floor(buffer.length / x);
+        let newBuffer;
 
-        for (let i = 0; i < buffer.numberOfChannels; i++) {
-            const inputData = buffer.getChannelData(i);
-            const newData = new Float32Array(length);
+        if (channelNr === '1') { // Mono
+            const monoData = new Float32Array(length);
 
             for (let j = 0; j < length; j++) {
-                newData[j] = inputData[j * x];
+                monoData[j] = (buffer.getChannelData(0)[j * x] + buffer.getChannelData(1)[j * x]) / 2;
             }
-            channelData.push(newData);
+            newBuffer = audioContext.createBuffer(1, length, buffer.sampleRate);
+            newBuffer.copyToChannel(monoData, 0);
+        } else { // Stereo
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                const inputData = buffer.getChannelData(i);
+                const newData = new Float32Array(length);
+
+                for (let j = 0; j < length; j++) {
+                    newData[j] = inputData[j * x];
+                }
+                channelData.push(newData);
+            }
+
+            // Creating a new buffer with the modified channel data
+            newBuffer = audioContext.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                newBuffer.copyToChannel(channelData[i], i);
+            }
         }
 
-        // Creating a new buffer with the modified channel data
-        const newBuffer = audioContext.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
-
-        for (let i = 0; i < buffer.numberOfChannels; i++) {
-            newBuffer.copyToChannel(channelData[i], i);
-        }
-
-        let newSampleRate = sRateVal
+        let newSampleRate = sRateVal;
         const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, newSampleRate);
 
-        let bitDepth = bitVal
+        let bitDepth = bitVal;
         const modifiedBuffer = quantizeBuffer(resampledBuffer, bitDepth, audioContext);
 
-        await encodeResampledAudio(modifiedBuffer, bpm, key);
+        await encodeResampledAudio(modifiedBuffer, bpm, key, bitDepth);
 
         fileInput.value = '';
     };
@@ -201,12 +213,12 @@ function quantizeBuffer(buffer, bitDepth, audioContext) {
     return newBuffer;
 }
 
-async function encodeResampledAudio(buffer, bpm, key) {
+async function encodeResampledAudio(buffer, bpm, key, bitDepth) {
     const numberOfChannels = buffer.numberOfChannels;
     const sampleRate = buffer.sampleRate;
     const samples = buffer.length;
 
-    const wavBuffer = audioBufferToWav(buffer);
+    const wavBuffer = audioBufferToWav(buffer, bitDepth);
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     const url = URL.createObjectURL(blob);
 
@@ -218,9 +230,9 @@ async function encodeResampledAudio(buffer, bpm, key) {
     downloadLink.click();
 }
 
-function audioBufferToWav(buffer) {
+function audioBufferToWav(buffer, bitDepth) {
     const numOfChannels = buffer.numberOfChannels;
-    const length = buffer.length * numOfChannels * 2 + 44;
+    const length = buffer.length * numOfChannels * (bitDepth / 8) + 44;
     const result = new ArrayBuffer(length);
     const view = new DataView(result);
     const channels = [];
@@ -237,9 +249,9 @@ function audioBufferToWav(buffer) {
     setUint16(1); // PCM (uncompressed)
     setUint16(numOfChannels);
     setUint32(buffer.sampleRate);
-    setUint32(buffer.sampleRate * 2 * numOfChannels); // avg. bytes/sec
-    setUint16(numOfChannels * 2); // block-align
-    setUint16(16); // 16-bit (hardcoded in this demo)
+    setUint32(buffer.sampleRate * (bitDepth / 8) * numOfChannels); // avg. bytes/sec
+    setUint16(numOfChannels * (bitDepth / 8)); // block-align
+    setUint16(bitDepth); // bit depth
 
     setUint32(0x61746164); // "data" - chunk
     setUint32(length - pos - 4); // chunk length
@@ -250,9 +262,23 @@ function audioBufferToWav(buffer) {
 
     while (pos < length) {
         for (let i = 0; i < numOfChannels; i++) { // interleave channels
-            const sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-            view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true); // scale to 16-bit signed int
-            pos += 2;
+            let sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+            if (bitDepth === 8) {
+                // Convert to 8-bit unsigned
+                sample = ((sample + 1) * 127.5) | 0;
+                view.setUint8(pos, sample);
+            } else {
+                // Convert to signed int
+                sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                if (bitDepth === 16) {
+                    view.setInt16(pos, sample, true);
+                } else if (bitDepth === 24) {
+                    view.setInt32(pos, sample << 8, true);
+                } else if (bitDepth === 32) {
+                    view.setInt32(pos, sample, true);
+                }
+            }
+            pos += bitDepth / 8;
         }
         offset++; // next source sample
     }
