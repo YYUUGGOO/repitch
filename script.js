@@ -37,7 +37,6 @@ function handleFileSelect(event) {
 let HTMLSpeed = getSelectedRadioValue('speed');
 let HTMLsampleRate = getSelectedRadioValue('fidelity');
 
-
 function getSelectedRadioValue(name) {
     const selectedRadio = document.querySelector(`input[name="${name}"]:checked`);
     return selectedRadio ? selectedRadio.value : null;
@@ -207,57 +206,66 @@ async function encodeResampledAudio(buffer, bpm, key) {
     const sampleRate = buffer.sampleRate;
     const samples = buffer.length;
 
-    const pcmLeftChannel = buffer.getChannelData(0);
-    const pcmRightChannel = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : pcmLeftChannel;
-
-    const encoder = await WasmMediaEncoder.createMp3Encoder();
-
-    encoder.configure({
-        sampleRate: sampleRate,
-        channels: numberOfChannels,
-        vbrQuality: 2,
-    });
-
-    let outBuffer = new Uint8Array(0);
-    let offset = 0;
-    const chunkSize = 1152; // Typical MP3 frame size
-
-    for (let i = 0; i < samples; i += chunkSize) {
-        const chunkLeft = pcmLeftChannel.subarray(i, i + chunkSize);
-        const chunkRight = pcmRightChannel.subarray(i, i + chunkSize);
-
-        const mp3Data = encoder.encode([chunkLeft, chunkRight]);
-
-        if (mp3Data.length + offset > outBuffer.length) {
-            const newBuffer = new Uint8Array(mp3Data.length + offset);
-            newBuffer.set(outBuffer);
-            outBuffer = newBuffer;
-        }
-
-        outBuffer.set(mp3Data, offset);
-        offset += mp3Data.length;
-    }
-
-    // Finalize the encoding and get the remaining data
-    const finalMp3Data = encoder.finalize();
-
-    if (finalMp3Data.length + offset > outBuffer.length) {
-        const newBuffer = new Uint8Array(finalMp3Data.length + offset);
-        newBuffer.set(outBuffer);
-        outBuffer = newBuffer;
-    }
-
-    outBuffer.set(finalMp3Data, offset);
-    offset += finalMp3Data.length;
-
-    // Create a Blob from the final output buffer
-    const blob = new Blob([outBuffer], { type: 'audio/mp3' });
+    const wavBuffer = audioBufferToWav(buffer);
+    const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     const url = URL.createObjectURL(blob);
 
-        const newFileName = `${bpm} ${key}.mp3`;
+    const newFileName = `${bpm} ${key}.wav`;
 
-        const downloadLink = document.createElement('a');
-        downloadLink.href = url;
-        downloadLink.download = newFileName;
-        downloadLink.click();
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = newFileName;
+    downloadLink.click();
+}
+
+function audioBufferToWav(buffer) {
+    const numOfChannels = buffer.numberOfChannels;
+    const length = buffer.length * numOfChannels * 2 + 44;
+    const result = new ArrayBuffer(length);
+    const view = new DataView(result);
+    const channels = [];
+    let offset = 0;
+    let pos = 0;
+
+    // Write WAV header
+    setUint32(0x46464952); // "RIFF"
+    setUint32(length - 8); // file length - 8
+    setUint32(0x45564157); // "WAVE"
+
+    setUint32(0x20746d66); // "fmt " chunk
+    setUint32(16); // length = 16
+    setUint16(1); // PCM (uncompressed)
+    setUint16(numOfChannels);
+    setUint32(buffer.sampleRate);
+    setUint32(buffer.sampleRate * 2 * numOfChannels); // avg. bytes/sec
+    setUint16(numOfChannels * 2); // block-align
+    setUint16(16); // 16-bit (hardcoded in this demo)
+
+    setUint32(0x61746164); // "data" - chunk
+    setUint32(length - pos - 4); // chunk length
+
+    // Write interleaved data
+    for (let i = 0; i < buffer.numberOfChannels; i++)
+        channels.push(buffer.getChannelData(i));
+
+    while (pos < length) {
+        for (let i = 0; i < numOfChannels; i++) { // interleave channels
+            const sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+            view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true); // scale to 16-bit signed int
+            pos += 2;
+        }
+        offset++; // next source sample
+    }
+
+    return result;
+
+    function setUint16(data) {
+        view.setUint16(pos, data, true);
+        pos += 2;
+    }
+
+    function setUint32(data) {
+        view.setUint32(pos, data, true);
+        pos += 4;
+    }
 }
