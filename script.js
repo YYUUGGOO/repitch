@@ -83,7 +83,6 @@ function extractBpmAndKey(fileName) {
     // Check if BPM is within the valid range (55 to 190)
     const validBpm = bpm >= 55 && bpm <= 190 ? bpm : 'Unknown';
 
-    // Extract key (optional): you can adjust this regex based on your naming conventions
     const keyMatch = fileName.match(/\b([A-G][#b]?m?)\b/i);
     const key = keyMatch ? keyMatch[1] : 'Unknown';
 
