@@ -29,7 +29,7 @@ Installation Instructions:
 Release Notes:
 ────────────────────────────────────────────────────────────────
 This uses the WebAudioAPI for the resampling and speeding up
-functions and wasm-media-encoders to encode to .mp3
+functions as well as the export function.
 
 ────────────────────────────────────────────────────────────────
 Group Information:
@@ -43,9 +43,7 @@ Greetings:
 AiR - R2R - MOIRA - TRAZOR and all other groups providing the 
 Scene with quality releases.
 ```
-# Known Issue
-There is a small gap at the beginning of the output file. This is due to how resampling works and (for now) can't be changed.
+
 # Used Libraries
 [Darkmode.js](https://github.com/sandoche/Darkmode.js)
 
-[wasm-media-encoders](https://github.com/arseneyr/wasm-media-encoders)
