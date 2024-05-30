@@ -44,14 +44,22 @@ h1 {
 .options {
   width: 100vw;
   display: flex;
-  justify-content: center
+  justify-content: center;
 }
 
 .items {
-  width: 40%;
   display: flex;
   justify-content: space-around;
 
+}
+
+.items div{
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+label{
+  white-space: nowrap;
 }
 
 .information {

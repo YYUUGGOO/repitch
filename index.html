@@ -2,10 +2,13 @@
 <html lang="en">
 
 <head>
+  <link rel="icon" type="image/png" href="images/icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Re:Pitch</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#000000">
 </head>
 
 <body>
@@ -30,7 +33,11 @@
 
           <div>
             <input type="radio" id="SP-1200" name="fidelity" value="SP-1200" />
-            <label for="SP-1200">SP-1200 (12/26)</label>
+            <label for="SP-1200">SP-1200 8 Bit (8/26)</label>
+          </div>
+          <div>
+            <input type="radio" id="SP-1201" name="fidelity" value="SP-1201" />
+            <label for="SP-1201">SP-1200 16 Bit (16/26)</label>
           </div>
           <div>
             <input type="radio" id="SK-1" name="fidelity" value="SK-1" />
@@ -64,6 +71,17 @@
           </div>
 
         </div>
+        <div class="filename">
+          <p><b>Rename File?</b></p>
+          <div>
+            <input type="radio" id="1" name="filename" value="true" checked/>
+            <label for="1">Rename to BPM and Key</label>
+          </div>
+          <div>
+            <input type="radio" id="2" name="filename" value="false"/>
+            <label for="2">Keep Original Filename</label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -84,7 +102,7 @@
       </div>
       <div class="section">
           <h2>What Do The Options Mean?</h2>
-          <p>Fidelity sets, well, the fidelity of the output. You can choose between CD Quality (46kHz 16 Bit) and simulations of old samplers such as the Emu SP-1200 (26kHz 12 Bit) or Casio SK-1 (9kHz 8 Bit). Speed sets the speed of the outpu and Channels sets the output channels.</p>
+          <p>Fidelity sets, well, the fidelity of the output. You can choose between CD Quality (46kHz 16 Bit) and approximations of old samplers such as the Emu SP-1200 (26kHz 12 Bit)* or Casio SK-1 (9kHz 8 Bit). Speed sets the speed of the outpu and Channels sets the output channels. <br><br>*Due to lack of 12 Bit support in WAV files there are two options for the SP-1200 simulation.</p>
       </div>
   
       <div class="section 3">
@@ -93,15 +111,15 @@
       </div>
       <div class="section">
           <h2>How Does This Work?</h2>
-          <p>It uses the WebAudio API, WebAssembly, and some fairy dust. Files are processed client-side, which means that your audio does not get sent to any servers. If you want to know more, the source code is on <a href="https://github.com/YYUUGGOO/repitch">GitHub</a>.</p>
+          <p>It only uses the WebAudio API and some fairy dust. Files are processed client-side, which means that your audio does not get sent to any servers. If you want to know more, the source code is on <a href="https://github.com/YYUUGGOO/repitch">GitHub</a>.</p>
       </div>
       <div class="section 5">
           <h2>What Do I Do With The Files?</h2>
-          <p>Upload them to your sampler and pitch down accordingly. <br> If you are using the KO II, assign the sample to a pad and either pitch it down or play it chromatically one octave down if you chose 2X and two octaves down if you chose 4X.</p>
+          <p>Upload them to your sampler and pitch down accordingly. <br><br>If you are using the KO II, assign the sample to a pad and either pitch it down or play it chromatically one octave down if you chose 2X and two octaves down if you chose 4X.</p>
       </div>
       <div class="section 4">
           <h2>Why Did You Make This?</h2>
-          <p>Because I got tired of manually speeding up my samples for my KO II using Ableton.</p>
+          <p>Because I got tired of manually speeding up and resampling samples for my KO II using Ableton.</p>
       </div>
       <div class="section">
           <h2>Who Are You?</h2>

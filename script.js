@@ -2,6 +2,8 @@ const dropZone = document.getElementById('drop_zone');
 const fileInput = document.getElementById('fileInput');
 const downloadLink = document.getElementById('downloadLink');
 const outputAudio = document.getElementById('outputAudio');
+let fileName
+
 
 // Event listeners
 dropZone.addEventListener('click', () => fileInput.click());
@@ -34,8 +36,6 @@ function handleFileSelect(event) {
     processAudio();
 }
 
-let HTMLSpeed = getSelectedRadioValue('speed');
-let HTMLsampleRate = getSelectedRadioValue('fidelity');
 
 function getSelectedRadioValue(name) {
     const selectedRadio = document.querySelector(`input[name="${name}"]:checked`);
@@ -45,6 +45,8 @@ function getSelectedRadioValue(name) {
 function getSampleRate(fidelity) {
     switch (fidelity) {
         case 'SP-1200':
+            return 26000;
+        case 'SP-1201':
             return 26000;
         case 'SK-1':
             return 9000;
@@ -56,7 +58,9 @@ function getSampleRate(fidelity) {
 function getBitDepth(fidelity) {
     switch (fidelity) {
         case 'SP-1200':
-            return 12;
+            return 8;
+        case 'SP-1201':
+            return 16;
         case 'SK-1':
             return 8;
         default:
@@ -83,7 +87,6 @@ function extractBpmAndKey(fileName) {
     // Check if BPM is within the valid range (55 to 190)
     const validBpm = bpm >= 55 && bpm <= 190 ? bpm : 'Unknown';
 
-    // Extract key (optional): you can adjust this regex based on your naming conventions
     const keyMatch = fileName.match(/\b([A-G][#b]?m?)\b/i);
     const key = keyMatch ? keyMatch[1] : 'Unknown';
 
@@ -121,7 +124,7 @@ async function processAudio() {
             return;
         }
         // Get and display the file name
-        const fileName = file.name;
+        fileName = file.name;
         console.log(`Processing file: ${fileName}`);
         //document.getElementById('fileNameDisplay').textContent = `Processing file: ${fileName}`;
 
@@ -217,12 +220,18 @@ async function encodeResampledAudio(buffer, bpm, key, bitDepth) {
     const numberOfChannels = buffer.numberOfChannels;
     const sampleRate = buffer.sampleRate;
     const samples = buffer.length;
+    let checkIfRename = getSelectedRadioValue("filename")
+    if (checkIfRename == "true"){
+        newFileName = `${bpm} ${key}.wav`;
+    } else {
+        newFileName = fileName;
+    }
 
     const wavBuffer = audioBufferToWav(buffer, bitDepth);
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     const url = URL.createObjectURL(blob);
 
-    const newFileName = `${bpm} ${key}.wav`;
+
 
     const downloadLink = document.createElement('a');
     downloadLink.href = url;
@@ -295,3 +304,15 @@ function audioBufferToWav(buffer, bitDepth) {
         pos += 4;
     }
 }
+//service worker implementation for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch(error => {
+          console.log('ServiceWorker registration failed: ', error);
+        });
+    });
+  }
