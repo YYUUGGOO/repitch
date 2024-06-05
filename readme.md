@@ -46,4 +46,6 @@ Scene with quality releases.
 
 # Used Libraries
 [Darkmode.js](https://github.com/sandoche/Darkmode.js)
+[JSZip](https://stuk.github.io/jszip/)
+[FileSaver](https://github.com/eligrey/FileSaver.js)
 
