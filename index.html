@@ -17,7 +17,7 @@
     <div class="divcont">
     <div id="drop_zone" class="drop-zone">
         <p>Choose options then drop an audio file here or click to select a file</p>
-        <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+        <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
     </div>
     <button style="display: none;" id="processButton">Resample Audio</button>
     <a id="downloadLink" style="display: none;">Download </a>
@@ -135,10 +135,8 @@
 </html>
 
 <script src="https://cdn.jsdelivr.net/npm/darkmode-js@1.5.7/lib/darkmode-js.min.js"></script>
-<script src="
-https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js
-"></script>
-<script src="https://unpkg.com/wasm-media-encoders@0.6.4/dist/umd/WasmMediaEncoder.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="script.js"></script>
 <script>
   function addDarkmodeWidget() {

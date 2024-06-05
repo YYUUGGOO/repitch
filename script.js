@@ -27,13 +27,15 @@ function handleFileDrop(event) {
     dropZone.classList.remove('dragover');
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        fileInput.files = files;
-        processAudio();
+        processFiles(files);
     }
 }
 
 function handleFileSelect(event) {
-    processAudio();
+    const files = event.target.files;
+    if (files.length > 0) {
+        processFiles(files);
+    }
 }
 
 
@@ -96,86 +98,106 @@ function extractBpmAndKey(fileName) {
     };
 }
 
-async function processAudio() {
-    let getSpeedButton = getSelectedRadioValue("speed")
-    let getFidelityButton = getSelectedRadioValue("fidelity")
-    let channelNr = getSelectedRadioValue("channels")
-    let speedVal = getSpeedFactor(getSpeedButton)
-    let sRateVal = getSampleRate(getFidelityButton)
-    let bitVal = getBitDepth(getFidelityButton)
-    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal + " Channel: " + channelNr)
+async function processFiles(files) {
+    if (files.length === 1) {
+        const processedFile = await processAudio(files[0]);
+        downloadFile(processedFile.blob, processedFile.name);
+    } else {
+        const zip = new JSZip();
+        for (let i = 0; i < files.length; i++) {
+            const processedFile = await processAudio(files[i]);
+            zip.file(processedFile.name, processedFile.blob);
+        }
+        zip.generateAsync({ type: "blob" }).then(function (content) {
+            saveAs(content, "processed_files.zip");
+        });
+    }
+}
 
-    const file = fileInput.files[0];
+function downloadFile(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = fileName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
+}
+
+async function processAudio(file) {
+    let getSpeedButton = getSelectedRadioValue("speed");
+    let getFidelityButton = getSelectedRadioValue("fidelity");
+    let channelNr = getSelectedRadioValue("channels");
+    let speedVal = getSpeedFactor(getSpeedButton);
+    let sRateVal = getSampleRate(getFidelityButton);
+    let bitVal = getBitDepth(getFidelityButton);
+    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal + " Channel: " + channelNr);
+
     if (!file) {
-        alert('Please select an audio file.');
+        alert('Please select files.');
         return;
     }
 
-    const audioContext = new(window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const reader = new FileReader();
 
-    reader.onload = async function (event) {
-        const audioBuffer = event.target.result;
-        const buffer = await audioContext.decodeAudioData(audioBuffer);
+    return new Promise((resolve, reject) => {
+        reader.onload = async function (event) {
+            try {
+                const audioBuffer = event.target.result;
+                const buffer = await audioContext.decodeAudioData(audioBuffer);
 
-        // Check if the audio duration is less than 30 seconds
-        if (buffer.duration >= 30) {
-            alert('Please upload an audio file less than 30 seconds long.');
-            return;
-        }
-        // Get and display the file name
-        fileName = file.name;
-        console.log(`Processing file: ${fileName}`);
-        //document.getElementById('fileNameDisplay').textContent = `Processing file: ${fileName}`;
-
-        const { bpm, key } = extractBpmAndKey(fileName);
-        console.log(`Extracted BPM: ${bpm}, Key: ${key}`);
-        
-        // Doubling the speed by halving the buffer duration
-        const channelData = [];
-        let x = speedVal;
-        const length = Math.floor(buffer.length / x);
-        let newBuffer;
-
-        if (channelNr === '1') { // Mono
-            const monoData = new Float32Array(length);
-
-            for (let j = 0; j < length; j++) {
-                monoData[j] = (buffer.getChannelData(0)[j * x] + buffer.getChannelData(1)[j * x]) / 2;
-            }
-            newBuffer = audioContext.createBuffer(1, length, buffer.sampleRate);
-            newBuffer.copyToChannel(monoData, 0);
-        } else { // Stereo
-            for (let i = 0; i < buffer.numberOfChannels; i++) {
-                const inputData = buffer.getChannelData(i);
-                const newData = new Float32Array(length);
-
-                for (let j = 0; j < length; j++) {
-                    newData[j] = inputData[j * x];
+                if (buffer.duration >= 30) {
+                    alert('Please upload an audio file less than 30 seconds long.');
+                    reject('File too long');
+                    return;
                 }
-                channelData.push(newData);
+
+                fileName = file.name;
+                console.log(`Processing file: ${fileName}`);
+                const { bpm, key } = extractBpmAndKey(fileName);
+                console.log(`Extracted BPM: ${bpm}, Key: ${key}`);
+
+                const channelData = [];
+                let x = speedVal;
+                const length = Math.floor(buffer.length / x);
+                let newBuffer;
+
+                if (channelNr === '1') { // Mono
+                    const monoData = new Float32Array(length);
+                    for (let j = 0; j < length; j++) {
+                        monoData[j] = (buffer.getChannelData(0)[j * x] + buffer.getChannelData(1)[j * x]) / 2;
+                    }
+                    newBuffer = audioContext.createBuffer(1, length, buffer.sampleRate);
+                    newBuffer.copyToChannel(monoData, 0);
+                } else { // Stereo
+                    for (let i = 0; i < buffer.numberOfChannels; i++) {
+                        const inputData = buffer.getChannelData(i);
+                        const newData = new Float32Array(length);
+                        for (let j = 0; j < length; j++) {
+                            newData[j] = inputData[j * x];
+                        }
+                        channelData.push(newData);
+                    }
+                    newBuffer = audioContext.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+                    for (let i = 0; i < buffer.numberOfChannels; i++) {
+                        newBuffer.copyToChannel(channelData[i], i);
+                    }
+                }
+
+                const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, sRateVal);
+                const modifiedBuffer = quantizeBuffer(resampledBuffer, bitVal, audioContext);
+                const audioBlob = await encodeResampledAudio(modifiedBuffer, bpm, key, bitVal, fileName);
+
+                resolve({ blob: audioBlob, name: fileName });
+            } catch (error) {
+                reject(error);
             }
+        };
 
-            // Creating a new buffer with the modified channel data
-            newBuffer = audioContext.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
-
-            for (let i = 0; i < buffer.numberOfChannels; i++) {
-                newBuffer.copyToChannel(channelData[i], i);
-            }
-        }
-
-        let newSampleRate = sRateVal;
-        const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, newSampleRate);
-
-        let bitDepth = bitVal;
-        const modifiedBuffer = quantizeBuffer(resampledBuffer, bitDepth, audioContext);
-
-        await encodeResampledAudio(modifiedBuffer, bpm, key, bitDepth);
-
-        fileInput.value = '';
-    };
-
-    reader.readAsArrayBuffer(file);
+        reader.readAsArrayBuffer(file);
+    });
 }
 
 function resampleBuffer(buffer, sampleRate, newSampleRate) {
@@ -216,27 +238,19 @@ function quantizeBuffer(buffer, bitDepth, audioContext) {
     return newBuffer;
 }
 
-async function encodeResampledAudio(buffer, bpm, key, bitDepth) {
+async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName) {
     const numberOfChannels = buffer.numberOfChannels;
     const sampleRate = buffer.sampleRate;
     const samples = buffer.length;
-    let checkIfRename = getSelectedRadioValue("filename")
-    if (checkIfRename == "true"){
+    let newFileName = fileName;
+    let checkIfRename = getSelectedRadioValue("filename");
+    if (checkIfRename === "true") {
         newFileName = `${bpm} ${key}.wav`;
-    } else {
-        newFileName = fileName;
     }
 
     const wavBuffer = audioBufferToWav(buffer, bitDepth);
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
-    const url = URL.createObjectURL(blob);
-
-
-
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = newFileName;
-    downloadLink.click();
+    return blob;
 }
 
 function audioBufferToWav(buffer, bitDepth) {
