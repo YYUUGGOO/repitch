@@ -22,69 +22,168 @@
     <button style="display: none;" id="processButton">Resample Audio</button>
     <a id="downloadLink" style="display: none;">Download </a>
     </div>
-    <div class="options">
-      <div class="items">
-        <div class="fidelity">
-          <p><b>Fidelity</b></p>
+    <div class="information items">
+      <div class="fidelity">
+        <p><b>Fidelity</b></p>
+      <div>
+          <input type="radio" id="sd" name="fidelity" value="sd" checked />
+          <label for="sd">CD (16/46)</label>
+        </div>
+
         <div>
-            <input type="radio" id="sd" name="fidelity" value="sd" checked />
-            <label for="sd">CD (16/46)</label>
-          </div>
+          <input type="radio" id="SP-1200" name="fidelity" value="SP-1200" />
+          <label for="SP-1200">SP-1200 8 Bit (8/26)</label>
+        </div>
+        <div>
+          <input type="radio" id="SP-1201" name="fidelity" value="SP-1201" />
+          <label for="SP-1201">SP-1200 16 Bit (16/26)</label>
+        </div>
+        <div>
+          <input type="radio" id="SK-1" name="fidelity" value="SK-1" />
+          <label for="SK-1">SK-1 (8/9)</label>
+        </div>
+      </div>
+      <div class="speed">
+        <p><b>Speed</b></p>
+        <div>
+          <input type="radio" id="1x" name="speed" value="1x" checked />
+          <label for="1x">1x</label>
+        </div>
+        <div>
+          <input type="radio" id="2x" name="speed" value="2x" />
+          <label for="2x">2x</label>
+        </div>
+        <div>
+          <input type="radio" id="4x" name="speed" value="4x" />
+          <label for="4x">4x</label>
+        </div>
+      </div>
+      <div class="channels">
+        <p><b>Channels</b></p>
+        <div>
+          <input type="radio" id="2" name="channels" value="2" checked/>
+          <label for="2">Stereo</label>
+        </div>
+        <div>
+          <input type="radio" id="1" name="channels" value="1"/>
+          <label for="1">Mono</label>
+        </div>
 
-          <div>
-            <input type="radio" id="SP-1200" name="fidelity" value="SP-1200" />
-            <label for="SP-1200">SP-1200 8 Bit (8/26)</label>
-          </div>
-          <div>
-            <input type="radio" id="SP-1201" name="fidelity" value="SP-1201" />
-            <label for="SP-1201">SP-1200 16 Bit (16/26)</label>
-          </div>
-          <div>
-            <input type="radio" id="SK-1" name="fidelity" value="SK-1" />
-            <label for="SK-1">SK-1 (8/9)</label>
-          </div>
+      </div>
+      <div class="filename">
+        <p><b>Rename File?</b></p>
+        <div>
+          <input type="radio" id="1" name="filename" value="true" checked/>
+          <label for="1">Rename to BPM and Key</label>
         </div>
-        <div class="speed">
-          <p><b>Speed</b></p>
-          <div>
-            <input type="radio" id="1x" name="speed" value="1x" checked />
-            <label for="1x">1x</label>
-          </div>
-          <div>
-            <input type="radio" id="2x" name="speed" value="2x" />
-            <label for="2x">2x</label>
-          </div>
-          <div>
-            <input type="radio" id="4x" name="speed" value="4x" />
-            <label for="4x">4x</label>
-          </div>
-        </div>
-        <div class="channels">
-          <p><b>Channels</b></p>
-          <div>
-            <input type="radio" id="2" name="channels" value="2" checked/>
-            <label for="2">Stereo</label>
-          </div>
-          <div>
-            <input type="radio" id="1" name="channels" value="1"/>
-            <label for="1">Mono</label>
-          </div>
-
-        </div>
-        <div class="filename">
-          <p><b>Rename File?</b></p>
-          <div>
-            <input type="radio" id="1" name="filename" value="true" checked/>
-            <label for="1">Rename to BPM and Key</label>
-          </div>
-          <div>
-            <input type="radio" id="2" name="filename" value="false"/>
-            <label for="2">Keep Original Filename</label>
-          </div>
+        <div>
+          <input type="radio" id="2" name="filename" value="false"/>
+          <label for="2">Keep Original Filename</label>
         </div>
       </div>
     </div>
+    <form id="ko2Form">
+      <details class="information" open>
+        <summary>
+          <b>EP-133 KO II Settings</b>
+          <input type="checkbox" role="switch" id="ko2FormToggle" checked style="margin-left: 2em;">
+        </summary>
 
+        <fieldset id="ko2FormFieldset" class="items">
+          <p class="volume-slider">
+            <output class="price-output" for="sound.amplitude"></output>
+            <input type="range" orient="vertical" name="sound.amplitude" id="sound.amplitude" value="90" min="0" max="200" list="amplitudelist" />
+            <label for="sound.amplitude"><b>Volume</b></label>
+            <datalist id="amplitudelist">
+              <option value="0">0</option>
+              <option value="90">90</option>
+              <option value="200">200</option>
+            </datalist>
+          </p>
+          <div class="grid-container">
+            <div>
+              <label for="sound.pan">
+                <b>Pan</b>
+                <output class="price-output" for="sound.pan"></output>
+              </label>
+              <input type="range" name="sound.pan" id="sound.pan" value="0" min="-16" max="16" list="panlist"/>
+              <datalist id="panlist">
+                <option value="-16">L</option>
+                <option value="0">C</option>
+                <option value="16">R</option>
+              </datalist>
+            </div>
+            <div>
+              <label for="sound.pitch">
+                <b>Pitch</b>
+                <output class="price-output" for="sound.pitch"></output>
+              </label>
+              <input type="range" name="sound.pitch" id="sound.pitch" value="0" min="-12" max="12" list="pitchlist" style="margin-bottom: 2em" />
+              <datalist id="pitchlist">
+                <option value="-12">-12</option>
+                <option value="0">0</option>
+                <option value="12">12</option>
+              </datalist>
+            </div>
+
+            <div>
+              <label for="envelope.attack">
+                <b>Attack</b>
+                <output class="price-output" for="envelope.attack"></output>
+              </label>
+              <input type="range" name="envelope.attack" id="envelope.attack" value="0" min="0" max="255" />
+            </div>
+            <div>
+              <label for="envelope.release">
+                <b>Release</b>
+                <output class="price-output" for="envelope.release"></output>
+              </label>
+              <input type="range" name="envelope.release" id="envelope.release" value="128" min="0" max="255" />
+            </div>
+          </div>
+
+          <div>
+            <p><b>Playmode</b></p>
+            <div>
+              <input type="radio" id="sound.playmode.oneshot" name="sound.playmode" value="oneshot" />
+              <label for="sound.playmode.oneshot">Oneshot</label>
+            </div>
+            <div>
+              <input type="radio" id="sound.playmode.key" name="sound.playmode" value="key" checked />
+              <label for="sound.playmode.key">Key</label>
+            </div>
+            <div style="margin-bottom: 1.8em">
+              <input type="radio" id="sound.playmode.legato" name="sound.playmode" value="legato" />
+              <label for="sound.playmode.legato">Legato</label>
+            </div>
+
+            <div>
+              <p><label for="sound.rootnote"><b>Rootnote</b></label></p>
+              <input type="number" name="sound.rootnote" id="sound.rootnote" value="60" min="0" max="127" />
+              <output class="price-output" for="sound.rootnote"></output>
+            </div>
+          </div>
+
+          <div>
+            <p><b>Time Stretch</b></p>
+            <div>
+              <input type="radio" id="time.mode.off" name="time.mode" value="off" checked/>
+              <label for="time.mode.off">Off</label>
+            </div>
+            <div>
+              <input type="radio" id="time.mode.bpm" name="time.mode" value="bpm" />
+              <label for="time.mode.bpm">BPM</label>
+            </div>
+            <div>
+              <input type="radio" id="time.mode.bar" name="time.mode" value="bar" />
+              <label for="time.mode.bar">Bar</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <p><i>These options set the default playback style when the sample loads in the Teenage Engineering KO II. They are ignored in other samplers.</i></p>
+      </details>
+    </form>
 
     <div class="information">
       <div class="section 1">

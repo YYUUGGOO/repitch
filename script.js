@@ -2,8 +2,25 @@ const dropZone = document.getElementById('drop_zone');
 const fileInput = document.getElementById('fileInput');
 const downloadLink = document.getElementById('downloadLink');
 const outputAudio = document.getElementById('outputAudio');
-let fileName
+const ko2Form = document.getElementById('ko2Form');
+const ko2FormToggle = document.getElementById('ko2FormToggle');
+const ko2FormFieldset = document.getElementById('ko2FormFieldset');
+const rangeInputs = document.querySelectorAll('input[type="range"]');
+const rootnoteInput = document.getElementById('sound.rootnote');
+const rootnootOutput = document.querySelector(`output[for="sound.rootnote"]`);
+let fileName;
 
+const NOTE_MAP = {};
+const NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+for (let i = 0; i < 12; i++) {
+    NOTE_MAP[i] = `N${i + 1}`;
+}
+for (let i = 12; i < 128; i++) {
+    const note = NOTES[(i - 12) % NOTES.length];
+    const octave = Math.floor((i - 12) / NOTES.length);
+    NOTE_MAP[i] = `${note}${octave}`;
+}
 
 // Event listeners
 dropZone.addEventListener('click', () => fileInput.click());
@@ -11,6 +28,27 @@ dropZone.addEventListener('dragover', handleDragOver);
 dropZone.addEventListener('dragleave', handleDragLeave);
 dropZone.addEventListener('drop', handleFileDrop);
 fileInput.addEventListener('change', handleFileSelect);
+ko2FormToggle.addEventListener('change', handleKO2FormState);
+rangeInputs.forEach(input => input.addEventListener('input', handleRangeOutput));
+rangeInputs.forEach(input => handleRangeOutput({ currentTarget: input }))
+rootnoteInput.addEventListener('input', handleRootnoteOutput);
+handleRootnoteOutput();
+
+function handleRangeOutput({ currentTarget }) {
+    const id = currentTarget.id;
+    const outputElement = document.querySelector(`output[for="${id}"]`);
+    if (outputElement) {
+        outputElement.value = currentTarget.value;
+    }
+}
+
+function handleRootnoteOutput() {
+    rootnootOutput.value = NOTE_MAP[rootnoteInput.value];
+}
+
+function handleKO2FormState() {
+    ko2FormFieldset.toggleAttribute('disabled');
+}
 
 function handleDragOver(event) {
     event.preventDefault();
@@ -81,6 +119,23 @@ function getSpeedFactor(speed) {
     }
 }
 
+function getKO2Buffer() {
+    const data = new FormData(ko2Form);
+    const settings = {};
+    for (const [key, value] of data) {
+        // number values must be integers
+        settings[key] = /^\d+$/.test(value) ? parseInt(value, 10) : value;
+    }
+    // If the form is disabled we want to return an empty buffer
+    // to skip adding the headers. If the form is enabled a null
+    // terminator is required when writing the subchunk
+    const settingsStringified = JSON.stringify(settings);
+    const ko2Settings = settingsStringified !== "{}" ? `${settingsStringified}\0` : ``;
+    const textEncoder = new TextEncoder();
+
+    return textEncoder.encode(ko2Settings);
+}
+
 function extractBpmAndKey(fileName) {
     // Extract BPM as the last number in the file name between 55 and 190
     const bpmMatch = fileName.match(/(\d+)(?!.*\d)/);
@@ -132,6 +187,7 @@ async function processAudio(file) {
     let speedVal = getSpeedFactor(getSpeedButton);
     let sRateVal = getSampleRate(getFidelityButton);
     let bitVal = getBitDepth(getFidelityButton);
+    let ko2Buffer = getKO2Buffer();
     console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal + " Channel: " + channelNr);
 
     if (!file) {
@@ -188,7 +244,7 @@ async function processAudio(file) {
 
                 const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, sRateVal);
                 const modifiedBuffer = quantizeBuffer(resampledBuffer, bitVal, audioContext);
-                const audioBlob = await encodeResampledAudio(modifiedBuffer, bpm, key, bitVal, fileName);
+                const audioBlob = await encodeResampledAudio(modifiedBuffer, bpm, key, bitVal, fileName, ko2Buffer);
 
                 resolve({ blob: audioBlob, name: fileName });
             } catch (error) {
@@ -238,7 +294,7 @@ function quantizeBuffer(buffer, bitDepth, audioContext) {
     return newBuffer;
 }
 
-async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName) {
+async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName, ko2Buffer) {
     const numberOfChannels = buffer.numberOfChannels;
     const sampleRate = buffer.sampleRate;
     const samples = buffer.length;
@@ -248,14 +304,20 @@ async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName) {
         newFileName = `${bpm} ${key}.wav`;
     }
 
-    const wavBuffer = audioBufferToWav(buffer, bitDepth);
+    const wavBuffer = audioBufferToWav(buffer, bitDepth, ko2Buffer);
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     return blob;
 }
 
-function audioBufferToWav(buffer, bitDepth) {
+function audioBufferToWav(buffer, bitDepth, ko2Buffer) {
+    const ko2BufferSize = ko2Buffer.length;
+    const smplSize = ko2BufferSize !== 0 ? 36 : 0; // 36 is the size when using KO-2 tool
+    const listSize = ko2BufferSize !== 0 ? 12 : 0; // size of LIST, INFO, and TNGE headers
+
     const numOfChannels = buffer.numberOfChannels;
-    const length = buffer.length * numOfChannels * (bitDepth / 8) + 44;
+    const dataSize = buffer.length * numOfChannels * (bitDepth / 8)
+    const length = smplSize + listSize + ko2BufferSize  + dataSize + 44;
+
     const result = new ArrayBuffer(length);
     const view = new DataView(result);
     const channels = [];
@@ -276,8 +338,32 @@ function audioBufferToWav(buffer, bitDepth) {
     setUint16(numOfChannels * (bitDepth / 8)); // block-align
     setUint16(bitDepth); // bit depth
 
+    if (ko2BufferSize > 0) {
+        // smpl subchunk
+        setUint32(0x6C706D73); // "smpl"
+        setUint32(smplSize);
+        // Fill with padding
+        for (let i = 0; i < smplSize; i++) {
+            view.setUint8(pos, 0x00);
+            pos++;
+        }
+
+        // LIST subchunk
+        setUint32(0x5453494C); // "LIST"
+        setUint32(listSize + ko2BufferSize);
+        // INFO subchunk
+        setUint32(0x4F464E49); // INFO
+        setUint32(0x45474E54); // TNGE
+        setUint32(ko2BufferSize);
+        // Add EP-133 sample metadata
+        for (let i = 0; i < ko2BufferSize; i++) {
+            view.setUint8(pos, ko2Buffer[i]);
+            pos++;
+        }
+    }
+
     setUint32(0x61746164); // "data" - chunk
-    setUint32(length - pos - 4); // chunk length
+    setUint32(dataSize); // chunk length
 
     // Write interleaved data
     for (let i = 0; i < buffer.numberOfChannels; i++)
