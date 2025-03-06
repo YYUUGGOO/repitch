@@ -122,15 +122,14 @@ function getSpeedFactor(speed) {
 function getKO2Buffer() {
     const data = new FormData(ko2Form);
     const settings = {};
-    for (const [key, value] of data) {
+    for (const [key, value] of data.entries()) {
         // number values must be integers
-        settings[key] = /^\d+$/.test(value) ? parseInt(value, 10) : value;
+        settings[key] = /^-?\d+$/.test(value) ? parseInt(value, 10) : value;
     }
     // If the form is disabled we want to return an empty buffer
-    // to skip adding the headers. If the form is enabled a null
-    // terminator is required when writing the subchunk
+    // to skip adding the headers.
     const settingsStringified = JSON.stringify(settings);
-    const ko2Settings = settingsStringified !== "{}" ? `${settingsStringified}\0` : ``;
+    const ko2Settings = settingsStringified !== "{}" ? settingsStringified : ``;
     const textEncoder = new TextEncoder();
 
     return textEncoder.encode(ko2Settings);
@@ -188,7 +187,7 @@ async function processAudio(file) {
     let sRateVal = getSampleRate(getFidelityButton);
     let bitVal = getBitDepth(getFidelityButton);
     let ko2Buffer = getKO2Buffer();
-    console.log("Speed: " + speedVal + " Rate: " + sRateVal + " BD: " + bitVal + " Channel: " + channelNr);
+    console.log(`Speed: ${speedVal} Rate: ${sRateVal} BD: ${bitVal} Channel: ${channelNr} BufferLength: ${ko2Buffer.length}`);
 
     if (!file) {
         alert('Please select files.');
@@ -311,12 +310,13 @@ async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName, ko2Buf
 
 function audioBufferToWav(buffer, bitDepth, ko2Buffer) {
     const ko2BufferSize = ko2Buffer.length;
+    const ko2BufferPadding = ko2BufferSize % 2;
     const smplSize = ko2BufferSize !== 0 ? 36 : 0; // 36 is the size when using KO-2 tool
     const listSize = ko2BufferSize !== 0 ? 12 : 0; // size of LIST, INFO, and TNGE headers
 
     const numOfChannels = buffer.numberOfChannels;
     const dataSize = buffer.length * numOfChannels * (bitDepth / 8)
-    const length = smplSize + listSize + ko2BufferSize  + dataSize + 44;
+    const length = smplSize + listSize + ko2BufferSize + ko2BufferPadding  + dataSize + 44;
 
     const result = new ArrayBuffer(length);
     const view = new DataView(result);
@@ -350,7 +350,7 @@ function audioBufferToWav(buffer, bitDepth, ko2Buffer) {
 
         // LIST subchunk
         setUint32(0x5453494C); // "LIST"
-        setUint32(listSize + ko2BufferSize);
+        setUint32(listSize + ko2BufferSize + ko2BufferPadding);
         // INFO subchunk
         setUint32(0x4F464E49); // INFO
         setUint32(0x45474E54); // TNGE
@@ -358,6 +358,11 @@ function audioBufferToWav(buffer, bitDepth, ko2Buffer) {
         // Add EP-133 sample metadata
         for (let i = 0; i < ko2BufferSize; i++) {
             view.setUint8(pos, ko2Buffer[i]);
+            pos++;
+        }
+        // Add padding if needed (ko2BufferSize is odd)
+        if (ko2BufferPadding === 1) {
+            view.setUint8(pos, 0x00);
             pos++;
         }
     }
