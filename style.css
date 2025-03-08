@@ -41,21 +41,9 @@ h1 {
   justify-content: center;
 }
 
-.options {
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-}
-
 .items {
   display: flex;
-  justify-content: space-around;
-
-}
-
-.items div{
-  margin-left: 15px;
-  margin-right: 15px;
+  justify-content: space-between;
 }
 
 label{
@@ -66,6 +54,83 @@ label{
   padding-left: 20%;
   padding-right: 20%;
   text-align: justify;
+  margin-bottom: 2em;
+}
+
+summary {
+  display: flex;
+  align-items: center;
+}
+
+fieldset {
+  border: unset;
+  margin: unset;
+  padding: unset;
+}
+
+fieldset:disabled {
+  opacity: .35;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 1em;
+  row-gap: .66em;
+  margin-block-start: 1em;
+  align-items: flex-start;
+}
+
+.grid-container > div {
+  display: contents;
+}
+
+.grid-container label {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.volume-slider {
+  text-align: center;
+}
+
+input[type=range][orient=vertical] {
+  direction: rtl;
+  appearance: slider-vertical;
+  width: 2em;
+  height: 10.1em;
+  vertical-align: bottom;
+  display: block;
+  margin: 1em auto;
+}
+
+input[role="switch"] {
+  height: 1.5em;
+  width: 3em;
+  margin-top: .25em;
+  vertical-align: top;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  border: 1px solid rgba(0,0,0,.25);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+  background-position: left center;
+  border-radius: 2em;
+  transition: background-position .15s ease-in-out;
+}
+
+input[role="switch"]:checked {
+  background-position: right center;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.price-output {
+  font-variant-numeric: tabular-nums;
 }
 
 .section {
