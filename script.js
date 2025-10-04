@@ -219,7 +219,7 @@ async function processAudio(file) {
                 const length = Math.floor(buffer.length / x);
                 let newBuffer;
 
-                if (channelNr === '1') { // Mono
+                if (channelNr === '1' && buffer.numberOfChannels === 2) { // Mono
                     const monoData = new Float32Array(length);
                     for (let j = 0; j < length; j++) {
                         monoData[j] = (buffer.getChannelData(0)[j * x] + buffer.getChannelData(1)[j * x]) / 2;
