@@ -152,15 +152,49 @@ function extractBpmAndKey(fileName) {
     };
 }
 
+function buildRenamedFileName(bpm, key, fileName) {
+    const nameParts = [];
+    if (bpm !== 'Unknown') {
+        nameParts.push(bpm);
+    }
+    if (key !== 'Unknown') {
+        nameParts.push(key);
+    }
+
+    if (nameParts.length > 0) {
+        return `${nameParts.join(' ')}.wav`;
+    }
+
+    return fileName.replace(/\.[^/.]+$/, '') + '.wav';
+}
+
+function makeUniqueFileName(fileName, usedFileNames) {
+    const extensionMatch = fileName.match(/(\.[^.]*)$/);
+    const extension = extensionMatch ? extensionMatch[1] : '';
+    const nameWithoutExtension = extension ? fileName.slice(0, -extension.length) : fileName;
+    let uniqueName = fileName;
+    let appendix = 2;
+
+    while (usedFileNames.has(uniqueName)) {
+        uniqueName = `${nameWithoutExtension} ${appendix}${extension}`;
+        appendix++;
+    }
+
+    usedFileNames.add(uniqueName);
+    return uniqueName;
+}
+
 async function processFiles(files) {
     if (files.length === 1) {
         const processedFile = await processAudio(files[0]);
         downloadFile(processedFile.blob, processedFile.name);
     } else {
         const zip = new JSZip();
+        const usedFileNames = new Set();
         for (let i = 0; i < files.length; i++) {
             const processedFile = await processAudio(files[i]);
-            zip.file(processedFile.name, processedFile.blob);
+            const uniqueName = makeUniqueFileName(processedFile.name, usedFileNames);
+            zip.file(uniqueName, processedFile.blob);
         }
         zip.generateAsync({ type: "blob" }).then(function (content) {
             saveAs(content, "processed_files.zip");
@@ -243,9 +277,9 @@ async function processAudio(file) {
 
                 const resampledBuffer = resampleBuffer(newBuffer, buffer.sampleRate, sRateVal);
                 const modifiedBuffer = quantizeBuffer(resampledBuffer, bitVal, audioContext);
-                const audioBlob = await encodeResampledAudio(modifiedBuffer, bpm, key, bitVal, fileName, ko2Buffer);
+                const processedAudio = await encodeResampledAudio(modifiedBuffer, bpm, key, bitVal, fileName, ko2Buffer);
 
-                resolve({ blob: audioBlob, name: fileName });
+                resolve(processedAudio);
             } catch (error) {
                 reject(error);
             }
@@ -300,12 +334,12 @@ async function encodeResampledAudio(buffer, bpm, key, bitDepth, fileName, ko2Buf
     let newFileName = fileName;
     let checkIfRename = getSelectedRadioValue("filename");
     if (checkIfRename === "true") {
-        newFileName = `${bpm} ${key}.wav`;
+        newFileName = buildRenamedFileName(bpm, key, fileName);
     }
 
     const wavBuffer = audioBufferToWav(buffer, bitDepth, ko2Buffer);
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
-    return blob;
+    return { blob, name: newFileName };
 }
 
 function audioBufferToWav(buffer, bitDepth, ko2Buffer) {
